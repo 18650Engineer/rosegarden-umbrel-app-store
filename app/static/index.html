@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="bridge-token" content="__CSRF_TOKEN__">
+  <title>Rose Garden Bridge</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">R<span>G</span></span>
+        <div>
+          <div class="brandname">Rose Garden</div>
+          <div class="brandsub">LIGHTNING BRIDGE</div>
+        </div>
+      </div>
+      <div class="headright"><span class="statusdot" id="dot"></span><span id="connection">Checking bridge</span><span class="private">PRIVATE ALPHA</span></div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div class="eyebrow">CROSS-NETWORK LIGHTNING</div>
+        <h1>Move bitcoin across chains.</h1>
+        <p>Atomic Lightning swaps between SHA256BTC and BLAKE2BTC using your existing Paulscode bridge. Quotes come directly from your node.</p>
+      </section>
+
+      <div class="columns">
+        <section class="panel swap-panel">
+          <div class="sectionline"><h2>New swap</h2><span class="step">01 / 03</span></div>
+          <div class="toggle" role="group" aria-label="Swap direction">
+            <button id="dir-to-blake" class="selected" type="button" data-direction="toBLAKE2b">SHA256BTC <span>→</span> BLAKE2BTC</button>
+            <button id="dir-to-sha" type="button" data-direction="toSHA256">BLAKE2BTC <span>→</span> SHA256BTC</button>
+          </div>
+
+          <div class="amount-card">
+            <div class="caption">YOU RECEIVE</div>
+            <div class="currencyline"><div class="currency" id="receive-label">BLAKE2BTC</div><span class="currency-symbol">₿</span></div>
+            <div class="hint">Amount is determined by the destination Lightning invoice.</div>
+          </div>
+          <label class="field-label" for="destination">Receiving Lightning invoice</label>
+          <textarea id="destination" spellcheck="false" autocomplete="off" placeholder="Paste the destination lnbc… invoice here" rows="4"></textarea>
+          <p class="help">The invoice must come from a wallet on <strong id="destination-chain">BLAKE2BTC</strong>. Both chains use the same <code>lnbc</code> prefix.</p>
+          <button id="quote-btn" class="primary-btn" type="button">Get live quote <span>↗</span></button>
+          <div class="notice" id="input-notice" role="status" hidden></div>
+        </section>
+
+        <aside class="side">
+          <section class="panel readout">
+            <div class="sectionline"><h2>Bridge health</h2><button id="refresh-btn" class="refresh" type="button">Refresh ↻</button></div>
+            <dl>
+              <div><dt>SHA256BTC side</dt><dd id="sha-state">—</dd></div>
+              <div><dt>Bridge service</dt><dd id="bridge-state">—</dd></div>
+              <div><dt>Swaps in flight</dt><dd id="swaps">—</dd></div>
+              <div><dt>Available directions</dt><dd id="directions">—</dd></div>
+            </dl>
+            <p class="small-note" id="bridge-warning" hidden></p>
+          </section>
+          <section class="fineprint">
+            <div class="little-icon">⌁</div>
+            <h3>Self-custody by design</h3>
+            <p>We don't store wallet keys. The app uses your existing Lightning Fork bridge; bridge quotes reserve liquidity briefly and expire automatically.</p>
+            <div class="divider"></div>
+            <p>The Umbrel edition must remain behind Umbrel login and a restricted bridge participant credential. Do not expose the backend directly to the internet.</p>
+          </section>
+        </aside>
+      </div>
+
+      <section class="panel quote-panel" id="quote-panel" hidden>
+        <div class="sectionline"><h2>Live quote</h2><span class="step">02 / 03</span></div>
+        <div class="quote-values">
+          <div><div class="caption">PAY</div><div class="bigvalue" id="pay-amount">—</div><div class="valuename" id="pay-label">SHA256BTC sats</div></div>
+          <span class="midarrow">→</span>
+          <div><div class="caption">RECEIVE</div><div class="bigvalue" id="receive-amount">—</div><div class="valuename" id="receive-name">BLAKE2BTC sats</div></div>
+        </div>
+        <div class="quote-meta"><span>Bridge spread</span><strong id="spread">—</strong></div>
+        <div class="quote-meta"><span>Quote expiration</span><strong id="timer">—</strong></div>
+        <div class="timertrack"><div class="timerfill" id="timerfill"></div></div>
+        <label class="field-label" for="hold-invoice">Payment invoice — paste into the sending wallet</label>
+        <textarea id="hold-invoice" rows="3" readonly></textarea>
+        <div class="actions">
+          <button id="copy-btn" class="secondary-btn" type="button">Copy payment invoice</button>
+          <button id="pay-btn" class="primary-btn" type="button" hidden>Authorize Start9 payment</button>
+          <button id="requote-btn" class="quiet-btn" type="button">Refresh quote</button>
+        </div>
+        <div class="notice" id="pay-notice" role="status" hidden></div>
+        <p class="help">Confirm payment amount and routing fees in your sending wallet. Do not retry an uncertain or in-flight payment; inspect payment history first.</p>
+      </section>
+      <footer><span>ROSE GARDEN BRIDGE · PERSONAL NODE EDITION</span><span>SHA256BTC ↔ BLAKE2BTC</span></footer>
+    </main>
+  </div>
+</body>
+</html>

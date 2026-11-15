@@ -1,0 +1,23 @@
+manifestVersion: 1
+id: rosegarden-bridge
+category: bitcoin
+name: Rose Garden Bridge
+tagline: Private Lightning swaps between SHA256BTC and BLAKE2BTC
+version: "0.1.0-alpha"
+port: 8765
+description: >-
+  Private bridge companion UI for the Paulscode Lightning Fork. Request SHA256BTC
+  to BLAKE2BTC or reverse quotes, review price and expiry, and copy a hold
+  invoice into a separate Lightning wallet. Existing bridge service and
+  restricted participant credentials required. This application does not
+  run a bridge or pay automatically unless separately configured.
+developer: 18650Engineer
+website: https://github.com/18650Engineer
+repo: https://github.com/18650Engineer/rosegarden-umbrel-app-store
+support: https://github.com/18650Engineer/rosegarden-umbrel-app-store/issues
+releaseNotes: >-
+  Initial private alpha with bridge quote and health interface. Restricted
+  participant credential setup is required before quotes become available.
+gallery: []
+path: ""
+dependencies: []
