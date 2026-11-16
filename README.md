@@ -98,3 +98,11 @@ invoices and delegates cryptographic validation to Lightning Fork.
 Automatic payments remain disabled. After publishing the update, upgrade the
 installed application from Umbrel without uninstalling it; this preserves
 `data/bridge` credentials.
+
+## v0.2.0 QR workflow
+
+- The payment QR is generated **locally** by the Umbrel app after receiving a live quote; no third-party QR API is contacted.
+- The QR is hidden after expiration, and a fresh quote must be requested. Do not pay an expired hold invoice.
+- Scan/upload of receiving-invoice QR uses the browser's native `BarcodeDetector` API, when available. On browsers without it, paste the invoice. Camera access requires a secure context (HTTPS or localhost) and permission.
+- Both directions have the same QR controls; reverse swaps remain disabled if the bridge reports insufficient liquidity.
+- The server stores no private wallet keys and preserves the existing read-only participant macaroon mount.

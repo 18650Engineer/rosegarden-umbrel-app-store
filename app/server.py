@@ -57,6 +57,33 @@ INVOICE_RE = re.compile(r'^lnbc(?:[0-9]+[munp]?)?1[023456789acdefghjklmnpqrstuvw
 HASH_RE = re.compile(r'^[0-9a-f]{64}$', re.I)
 
 
+def payment_qr_svg(invoice):
+    """Generate QR locally; do not send invoices to third parties."""
+    import qrcode
+    if not isinstance(invoice, str) or not (30 <= len(invoice) <= 4000):
+        raise AppError('Invalid payment invoice')
+    if not re.fullmatch(r'[a-zA-Z0-9]+', invoice) or not invoice.lower().startswith('lnbc'):
+        raise AppError('Invalid payment invoice')
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L, border=4, box_size=1)
+    qr.add_data(invoice.upper())
+    try:
+        qr.make(fit=True)
+    except (ValueError, qrcode.exceptions.DataOverflowError):
+        raise AppError('Invoice too large for QR')
+    matrix = qr.get_matrix()
+    n = len(matrix)
+    # Individual dark modules are encoded as compact SVG rectangles.
+    paths = []
+    for y, row in enumerate(matrix):
+        x = 0
+        while x < n:
+            if row[x]:
+                start = x
+                while x < n and row[x]: x += 1
+                paths.append(f'M{start} {y}h{x-start}v1h-{x-start}z')
+            else: x += 1
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {n} {n}" shape-rendering="crispEdges" role="img" aria-label="Lightning payment QR"><rect width="100%" height="100%" fill="white"/><path fill="#142e27" d="{" ".join(paths)}"/></svg>'
+
 class AppError(Exception):
     def __init__(self, message, status=400):
         super().__init__(message)
@@ -413,6 +440,15 @@ class Handler(BaseHTTPRequestHandler):
                 data = json.loads(self.rfile.read(length))
             except (ValueError,UnicodeDecodeError):
                 raise AppError('Invalid JSON')
+            if self.path == '/api/payment-qr':
+                invoice = data.get('invoice')
+                # Only generate a QR for a live quote issued by this server.
+                with LOCK:
+                    allowed = any(item.get('hold_invoice') == invoice and item.get('expires_at',0) > time.time() for item in QUOTES.values())
+                if not allowed:
+                    raise AppError('Quote expired or invoice not recognized',409)
+                self.send_json(200, {'svg':payment_qr_svg(invoice)})
+                return
             if self.path == '/api/quote':
                 result = prepare_quote(data.get('invoice'), data.get('direction'))
                 self.send_json(200, result)

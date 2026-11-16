@@ -43,6 +43,12 @@
             <div class="hint">Amount is determined by the destination Lightning invoice.</div>
           </div>
           <label class="field-label" for="destination">Receiving Lightning invoice</label>
+          <div class="scan-actions">
+            <button id="scan-camera" class="secondary-btn" type="button">Scan invoice QR</button>
+            <button id="scan-upload" class="secondary-btn" type="button">Upload QR image</button>
+            <input id="qr-upload" type="file" accept="image/*" hidden>
+          </div>
+          <div id="camera-panel" class="camera-panel" hidden><video id="qr-video" autoplay playsinline muted></video><button id="stop-camera" class="quiet-btn" type="button">Close camera</button></div>
           <textarea id="destination" spellcheck="false" autocomplete="off" placeholder="Paste the destination lnbc… invoice here" rows="4"></textarea>
           <p class="help">The invoice must come from a wallet on <strong id="destination-chain">BLAKE2BTC</strong>. Both chains use the same <code>lnbc</code> prefix.</p>
           <button id="quote-btn" class="primary-btn" type="button">Get live quote <span>↗</span></button>
@@ -82,6 +88,7 @@
         <div class="timertrack"><div class="timerfill" id="timerfill"></div></div>
         <label class="field-label" for="hold-invoice">Payment invoice — paste into the sending wallet</label>
         <textarea id="hold-invoice" rows="3" readonly></textarea>
+        <div class="payment-qr" id="payment-qr" hidden><div id="qr-image" class="qr-image" aria-label="Payment invoice QR code"></div><p class="help" id="qr-caption">Scan with your SHA256BTC Lightning wallet before the quote expires.</p></div>
         <div class="actions">
           <button id="copy-btn" class="secondary-btn" type="button">Copy payment invoice</button>
           <button id="pay-btn" class="primary-btn" type="button" hidden>Authorize Start9 payment</button>

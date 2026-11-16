@@ -6,6 +6,8 @@ let active = null;
 let start9Configured = false;
 let clock = null;
 let quoteBusy = false;
+let cameraStream = null;
+let cameraFrame = null;
 const formatSat = v => new Intl.NumberFormat('en-US', {maximumFractionDigits:3}).format(v);
 const names = {toBLAKE2b:{pay:'SHA256BTC',receive:'BLAKE2BTC'},toSHA256:{pay:'BLAKE2BTC',receive:'SHA256BTC'}};
 async function api(path, body) {
@@ -25,7 +27,7 @@ function chooseDirection(dir) {
   ['dir-to-blake','dir-to-sha'].forEach(id=>el(id).classList.toggle('selected',el(id).dataset.direction===dir));
   el('receive-label').textContent=names[dir].receive;
   el('destination-chain').textContent=names[dir].receive;
-  active=null;el('quote-panel').hidden=true;el('destination').value='';
+  active=null;el('quote-panel').hidden=true;el('payment-qr').hidden=true;el('destination').value='';stopCamera();
   notice('input-notice','');
 }
 function showQuote(q) {
@@ -37,8 +39,9 @@ function showQuote(q) {
   el('receive-name').textContent=names[q.direction].receive+' sats';
   el('spread').textContent=Number.isFinite(Number(q.spread))?(Number(q.spread)*100).toFixed(3)+'%':'—';
   el('hold-invoice').value=q.hold_invoice;
+  renderPaymentQR(q);
   el('pay-btn').hidden=!(start9Configured && q.direction==='toBLAKE2b');
-  notice('pay-notice',start9Configured?'Review amounts before authorization. No automatic retries.':'To pay, copy this invoice and paste it into the SHA256BTC or BLAKE2BTC sending wallet.');
+  notice('pay-notice',start9Configured?'Review amounts before authorization. No automatic retries.':'Scan the payment QR or copy the invoice into your '+names[q.direction].pay+' Lightning wallet.');
   if (clock) clearInterval(clock);
   clock=setInterval(tick,250);
   tick();
@@ -52,6 +55,8 @@ function tick() {
   el('timerfill').style.width=(100*remain/duration)+'%';
   el('timerfill').style.background=remain<15?'#c47659':'#418765';
   el('copy-btn').disabled=remain===0;
+  el('payment-qr').classList.toggle('expired',remain===0);
+  if(!remain)el('qr-caption').textContent='Expired — refresh the quote. Do not scan or pay this invoice.';
   el('pay-btn').disabled=remain<9||active.payment_state!=='NOT_STARTED';
   if(!remain)notice('pay-notice','The hold invoice has expired. Do not pay it. Choose Refresh quote.',true);
 }
@@ -119,7 +124,75 @@ async function pay() {
   }catch(err){active.payment_state='UNKNOWN';notice('pay-notice',err.message+' — check Start9 history before another attempt.',true);}
   tick();
 }
+
+async function renderPaymentQR(q) {
+  el('payment-qr').hidden=true;
+  el('qr-image').replaceChildren();
+  el('qr-caption').textContent='Scan with your '+names[q.direction].pay+' Lightning wallet before the quote expires.';
+  try {
+    const result=await api('/api/payment-qr',{invoice:q.hold_invoice});
+    if(active!==q || q.expires_at<=Math.floor(Date.now()/1000))return;
+    // SVG is generated entirely by our server from a verified quote, never a remote QR service.
+    const blob=new Blob([result.svg],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(blob);
+    const img=new Image();img.alt='Scan to pay '+names[q.direction].pay+' Lightning invoice';
+    img.onload=()=>URL.revokeObjectURL(url);
+    img.onerror=()=>URL.revokeObjectURL(url);
+    img.src=url;
+    el('qr-image').append(img);el('payment-qr').hidden=false;
+  }catch(err){notice('pay-notice','QR unavailable: '+err.message+'. You can still copy the invoice.',true);}
+}
+async function detectQR(source) {
+  if(!('BarcodeDetector' in window))throw new Error('QR scanning is not supported by this browser. Paste the invoice instead.');
+  const detector=new BarcodeDetector({formats:['qr_code']});
+  const found=await detector.detect(source);
+  const value=found.find(x=>x.rawValue)?.rawValue;
+  if(!value)throw new Error('No QR code found. Try a sharper image.');
+  const cleaned=value.trim().replace(/^lightning:/i,'');
+  if(!/^lnbc/i.test(cleaned))throw new Error('QR code is not a BOLT11 Lightning invoice.');
+  el('destination').value=cleaned;
+  notice('input-notice','Invoice scanned. Review the receiving chain, then request a quote.');
+  stopCamera();
+}
+function stopCamera() {
+  if(cameraFrame)cancelAnimationFrame(cameraFrame);
+  cameraFrame=null;
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}
+  el('qr-video').srcObject=null;
+  el('camera-panel').hidden=true;
+}
+async function startCamera() {
+  try {
+    if(!navigator.mediaDevices?.getUserMedia)throw new Error('Camera requires HTTPS or localhost. Use Upload QR image or paste the invoice.');
+    if(!('BarcodeDetector' in window))throw new Error('Camera QR decoding is unsupported in this browser. Paste the invoice instead.');
+    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    el('qr-video').srcObject=cameraStream;
+    el('camera-panel').hidden=false;
+    let last=0;
+    const frame=async timestamp=>{
+      if(!cameraStream)return;
+      if(timestamp-last>450 && el('qr-video').readyState>=2){
+        last=timestamp;
+        try {await detectQR(el('qr-video'));}catch(e){if(!e.message.startsWith('No QR'))notice('input-notice',e.message,true);}
+      }
+      if(cameraStream)cameraFrame=requestAnimationFrame(frame);
+    };
+    cameraFrame=requestAnimationFrame(frame);
+  }catch(err){stopCamera();notice('input-notice',err.message,true);}
+}
+async function uploadQR(event) {
+  const file=event.target.files?.[0];event.target.value='';if(!file)return;
+  try {
+    const bitmap=await createImageBitmap(file);
+    try{await detectQR(bitmap);}finally{bitmap.close();}
+  }catch(err){notice('input-notice',err.message,true);}
+}
+
 document.querySelectorAll('.toggle button').forEach(b=>b.addEventListener('click',()=>chooseDirection(b.dataset.direction)));
+el('scan-camera').addEventListener('click',startCamera);
+el('stop-camera').addEventListener('click',stopCamera);
+el('scan-upload').addEventListener('click',()=>el('qr-upload').click());
+el('qr-upload').addEventListener('change',uploadQR);
 el('quote-btn').addEventListener('click',requestQuote);
 el('requote-btn').addEventListener('click',requestQuote);
 el('refresh-btn').addEventListener('click',refreshStatus);

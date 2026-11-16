@@ -71,3 +71,12 @@ class Tests(unittest.TestCase):
 if __name__=='__main__':unittest.main()
 
 # Additional REST-mode tests can be executed independently via unittest discovery.
+
+class QRTests(unittest.TestCase):
+    def test_payment_qr_is_svg(self):
+        svg=app.payment_qr_svg(INVOICE)
+        self.assertIn('<svg',svg)
+        self.assertIn('<path',svg)
+        self.assertNotIn(INVOICE,svg)
+    def test_reject_non_invoice_qr(self):
+        with self.assertRaises(app.AppError): app.payment_qr_svg('https://example.com')

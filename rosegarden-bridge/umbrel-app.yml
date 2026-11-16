@@ -3,7 +3,7 @@ id: rosegarden-bridge
 category: bitcoin
 name: Rose Garden Bridge
 tagline: Private Lightning swaps between SHA256BTC and BLAKE2BTC
-version: "0.1.2-alpha"
+version: "0.2.0-alpha"
 port: 8765
 description: >-
   Private bridge companion UI for the Paulscode Lightning Fork. Request SHA256BTC
@@ -16,9 +16,8 @@ website: https://github.com/18650Engineer
 repo: https://github.com/18650Engineer/rosegarden-umbrel-app-store
 support: https://github.com/18650Engineer/rosegarden-umbrel-app-store/issues
 releaseNotes: >-
-  Fix BOLT11 invoice validation so SHA256BTC and BLAKE2BTC Lightning invoices
-  containing the mandatory Bech32 separator are accepted, including uppercase
-  invoices. Payment approval and bridge safety settings are unchanged.
+  Add private payment QR generation, camera and image QR import where supported,
+  correct sending-wallet instructions, and mark expired QR codes unusable.
 gallery: []
 path: ""
 dependencies: []
