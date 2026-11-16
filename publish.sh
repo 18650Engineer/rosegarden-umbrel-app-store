@@ -1,4 +1,4 @@
-./publish.sh#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Run on the owner's machine inside the extracted repository folder.
 set -euo pipefail
 cd "$(dirname "$0")"
