@@ -132,6 +132,46 @@ def bridge_rest(args, timeout=20):
         raise AppError('Bridge REST unavailable or TLS verification failed: ' + type(exc).__name__, 502)
 
 
+
+def summarize_bridge_info(status):
+    """Return honest health data from operator CLI *or* limited participant Info.
+
+    The participant REST Info response has per-direction objects but generally
+    does not expose the operator's SHA256 node or in-flight swap count.
+    """
+    raw_directions = status.get('directions') or []
+    available = []
+    unavailable = []
+    for entry in raw_directions:
+        if isinstance(entry, str):
+            if entry in ('toSHA256', 'toBLAKE2b'):
+                available.append(entry)
+        elif isinstance(entry, dict):
+            name = entry.get('name')
+            if name not in ('toSHA256', 'toBLAKE2b'):
+                continue
+            if entry.get('open') is True:
+                available.append(name)
+            else:
+                unavailable.append({
+                    'name': name,
+                    'refusal': str(entry.get('refusal') or 'not currently available')[:200],
+                    'refusal_code': str(entry.get('refusal_code') or '')[:60],
+                })
+    node = status.get('sha256_node') or {}
+    return {
+        'connected': True,
+        'enabled': status.get('enabled'),  # unknown in the participant API
+        'directions': list(dict.fromkeys(available)),
+        'unavailable_directions': unavailable,
+        'refusals': status.get('refusals') or [],
+        'sha256_ready': node.get('state') if isinstance(node, dict) else None,
+        'swaps_in_flight': status.get('swaps_in_flight'),
+        'unfinished': status.get('unfinished'),
+        'needs_operator_count': len(status.get('needs_operator') or []),
+        'rate': status.get('rate'),
+    }
+
 def get_bridge(args, timeout=20):
     if BACKEND == 'rest':
         return bridge_rest(args, timeout)
@@ -318,15 +358,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == '/api/bridge-status':
                 status = get_bridge(['status'], 12)
-                self.send_json(200, {
-                    'enabled':status.get('enabled', True), 'connected':True, 'directions':status.get('directions', []),
-                    'refusals':status.get('refusals', []),
-                    'swaps_in_flight':status.get('swaps_in_flight'),
-                    'unfinished':status.get('unfinished'),
-                    'rate':status.get('rate'),
-                    'sha256_ready':status.get('sha256_node',{}).get('state'),
-                    'needs_operator_count':len(status.get('needs_operator') or []),
-                })
+                self.send_json(200, summarize_bridge_info(status))
                 return
             if self.path.startswith('/api/quote/'):
                 self.authorize()

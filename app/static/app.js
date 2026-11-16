@@ -71,14 +71,28 @@ async function requestQuote() {
 async function refreshStatus() {
   try {
     const s=await api('/api/bridge-status');
-    const ready=s.connected===true && s.enabled!==false;
-    el('dot').className='statusdot '+(ready?'good':'bad');
-    el('connection').textContent=ready?'Bridge connected':'Bridge unavailable';
-    el('sha-state').textContent=s.sha256_ready||'Not reported';
-    el('bridge-state').textContent=s.enabled?'Enabled':'Disabled';
-    el('swaps').textContent=String(s.swaps_in_flight??'—');
-    el('directions').textContent=(s.directions||[]).map(x=>x==='toBLAKE2b'?'To BLAKE2BTC':'To SHA256BTC').join(' · ')||'See quote availability';
+    const connected=s.connected===true;
+    const openDirections=Array.isArray(s.directions)?s.directions:[];
+    const closedDirections=Array.isArray(s.unavailable_directions)?s.unavailable_directions:[];
+    const known=['toSHA256','toBLAKE2b'];
+    const open=known.filter(name=>openDirections.includes(name));
+    const displayDirection=name=>name==='toBLAKE2b'?'To BLAKE2BTC':'To SHA256BTC';
+    el('dot').className='statusdot '+(connected?'good':'bad');
+    el('connection').textContent=connected?'Bridge connected':'Bridge unavailable';
+    el('sha-state').textContent=s.sha256_ready||'Operator-only';
+    el('bridge-state').textContent=s.enabled===false?'Disabled':open.length?'Serving':'Not serving';
+    el('swaps').textContent=s.swaps_in_flight==null?'Operator-only':String(s.swaps_in_flight);
+    el('directions').textContent=open.map(displayDirection).join(' · ')||'None currently';
+    for (const [id,dir] of [['dir-to-blake','toBLAKE2b'],['dir-to-sha','toSHA256']]) {
+      const unavailable=closedDirections.some(d=>d.name===dir);
+      el(id).disabled=unavailable;
+      el(id).title=unavailable?'Unavailable until bridge liquidity/status changes':'';
+    }
+    if(closedDirections.some(d=>d.name===direction) && open.length)chooseDirection(open[0]);
     const issues=[...(s.refusals||[])];
+    for(const item of closedDirections) {
+      issues.push(displayDirection(item.name)+' unavailable: '+item.refusal);
+    }
     if(s.needs_operator_count)issues.push('Operator action required for '+s.needs_operator_count+' swap(s)');
     el('bridge-warning').textContent=issues.join(' / ');
     el('bridge-warning').hidden=!issues.length;

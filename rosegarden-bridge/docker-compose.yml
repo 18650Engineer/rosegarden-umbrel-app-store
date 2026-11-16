@@ -6,7 +6,7 @@ services:
       # Do not disable the Umbrel login protection.
 
   web:
-    image: ghcr.io/18650engineer/rosegarden-bridge:0.1.0
+    image: ghcr.io/18650engineer/rosegarden-bridge:0.1.1
     restart: on-failure
     init: true
     security_opt:
