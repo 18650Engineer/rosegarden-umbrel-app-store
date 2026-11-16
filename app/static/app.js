@@ -133,13 +133,20 @@ async function renderPaymentQR(q) {
     const result=await api('/api/payment-qr',{invoice:q.hold_invoice});
     if(active!==q || q.expires_at<=Math.floor(Date.now()/1000))return;
     // SVG is generated entirely by our server from a verified quote, never a remote QR service.
-    const blob=new Blob([result.svg],{type:'image/svg+xml'});
-    const url=URL.createObjectURL(blob);
-    const img=new Image();img.alt='Scan to pay '+names[q.direction].pay+' Lightning invoice';
-    img.onload=()=>URL.revokeObjectURL(url);
-    img.onerror=()=>URL.revokeObjectURL(url);
-    img.src=url;
-    el('qr-image').append(img);el('payment-qr').hidden=false;
+    const parser=new DOMParser();
+    const doc=parser.parseFromString(result.svg,'image/svg+xml');
+    const svg=doc.documentElement;
+
+    if(svg.localName!=='svg' ||
+       svg.namespaceURI!=='http://www.w3.org/2000/svg' ||
+       doc.querySelector('parsererror')) {
+      throw new Error('Invalid QR image');
+    }
+
+    svg.setAttribute('width','100%');
+    svg.setAttribute('height','100%');
+    el('qr-image').replaceChildren(document.importNode(svg,true));
+    el('payment-qr').hidden=false;
   }catch(err){notice('pay-notice','QR unavailable: '+err.message+'. You can still copy the invoice.',true);}
 }
 async function detectQR(source) {
