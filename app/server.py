@@ -169,7 +169,13 @@ def summarize_bridge_info(status):
     The participant REST Info response has per-direction objects but generally
     does not expose the operator's SHA256 node or in-flight swap count.
     """
-    raw_directions = status.get('directions') or []
+    raw_directions = [
+        entry for entry in (status.get('directions') or [])
+        if entry == 'toBLAKE2b' or (
+            isinstance(entry, dict)
+            and entry.get('name') == 'toBLAKE2b'
+        )
+    ]
     available = []
     unavailable = []
     for entry in raw_directions:
@@ -189,6 +195,10 @@ def summarize_bridge_info(status):
                     'refusal_code': str(entry.get('refusal_code') or '')[:60],
                 })
     node = status.get('sha256_node') or {}
+    unavailable = [
+        item for item in unavailable
+        if item['name'] == 'toBLAKE2b'
+    ]
     return {
         'connected': True,
         'enabled': status.get('enabled'),  # unknown in the participant API
@@ -232,7 +242,7 @@ def validate_invoice(invoice):
 
 
 def prepare_quote(invoice, intended_direction):
-    if intended_direction not in ('toBLAKE2b', 'toSHA256'):
+    if intended_direction != 'toBLAKE2b':
         raise AppError('Unsupported direction')
     invoice = validate_invoice(invoice)
     # The same lnbc prefix is used on both chains. The bridge checks actual chain.

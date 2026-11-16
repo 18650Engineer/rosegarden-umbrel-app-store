@@ -26,5 +26,5 @@ jobs:
         with:
           context: ./app
           push: true
-          tags: ghcr.io/18650engineer/rosegarden-bridge:0.2.5
+          tags: ghcr.io/18650engineer/rosegarden-bridge:0.2.6
           platforms: linux/amd64

@@ -24,7 +24,7 @@ function notice(id, message, isError=false) {
 }
 function chooseDirection(dir) {
   direction=dir;
-  ['dir-to-blake','dir-to-sha'].forEach(id=>el(id).classList.toggle('selected',el(id).dataset.direction===dir));
+  ['dir-to-blake'].forEach(id=>el(id).classList.toggle('selected',el(id).dataset.direction===dir));
   el('receive-label').textContent=names[dir].receive;
   el('destination-chain').textContent=names[dir].receive;
   active=null;el('quote-panel').hidden=true;el('payment-qr').hidden=true;el('destination').value='';stopCamera();
@@ -79,7 +79,7 @@ async function refreshStatus() {
     const connected=s.connected===true;
     const openDirections=Array.isArray(s.directions)?s.directions:[];
     const closedDirections=Array.isArray(s.unavailable_directions)?s.unavailable_directions:[];
-    const known=['toSHA256','toBLAKE2b'];
+    const known=['toBLAKE2b'];
     const open=known.filter(name=>openDirections.includes(name));
     const displayDirection=name=>name==='toBLAKE2b'?'To BLAKE2BTC':'To SHA256BTC';
     el('dot').className='statusdot '+(connected?'good':'bad');
@@ -88,7 +88,7 @@ async function refreshStatus() {
     el('bridge-state').textContent=s.enabled===false?'Disabled':open.length?'Serving':'Not serving';
     el('swaps').textContent=s.swaps_in_flight==null?'Operator-only':String(s.swaps_in_flight);
     el('directions').textContent=open.map(displayDirection).join(' · ')||'None currently';
-    for (const [id,dir] of [['dir-to-blake','toBLAKE2b'],['dir-to-sha','toSHA256']]) {
+    for (const [id,dir] of [['dir-to-blake','toBLAKE2b']]) {
       const unavailable=closedDirections.some(d=>d.name===dir);
       el(id).disabled=unavailable;
       el(id).title=unavailable?'Unavailable until bridge liquidity/status changes':'';

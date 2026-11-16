@@ -4,7 +4,7 @@ category: bitcoin
 name: Rose Garden Bridge
 icon: https://raw.githubusercontent.com/18650Engineer/rosegarden-umbrel-app-store/main/rosegarden-bridge/icon.svg
 tagline: Private Lightning swaps between SHA256BTC and BLAKE2BTC
-version: "0.2.5-alpha"
+version: "0.2.6-alpha"
 port: 8765
 description: >-
   Private bridge companion UI for the Paulscode Lightning Fork. Request SHA256BTC

@@ -6,7 +6,7 @@ services:
       # Do not disable the Umbrel login protection.
 
   web:
-    image: ghcr.io/18650engineer/rosegarden-bridge:0.2.5
+    image: ghcr.io/18650engineer/rosegarden-bridge:0.2.6
     restart: on-failure
     init: true
     security_opt:
@@ -23,8 +23,8 @@ services:
       ROSE_BRIDGE_REST_URL: "https://10.21.21.66:8180"
       ROSE_BRIDGE_TLS_CERT: "/run/bridge/tls.cert"
       ROSE_BRIDGE_MACAROON: "/run/bridge/participant.macaroon"
-      ROSE_MAX_BTC_SAT: "10000"
-      ROSE_MAX_BLAKE_SAT: "5000000"
+      ROSE_MAX_BTC_SAT: "100000"
+      ROSE_MAX_BLAKE_SAT: "50000000"
       # Start9 automated payments disabled until explicitly configured
     volumes:
       - ${APP_DATA_DIR}/data/bridge:/run/bridge:ro
