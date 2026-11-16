@@ -50,7 +50,10 @@ START9_READY = all([START9_URL, START9_CERT, START9_MACAROON])
 TOKEN = secrets.token_urlsafe(36)
 QUOTES = {}  # ephemeral quotes, never written to disk
 LOCK = threading.Lock()
-INVOICE_RE = re.compile(r'^lnbc[023456789acdefghjklmnpqrstuvwxyz]+$', re.I)
+# BOLT11 uses the separator `1` between its human-readable prefix and data.
+# We validate only the basic shape here; the Lightning daemon checks the checksum,
+# destination chain, invoice expiry and other payment-specific constraints.
+INVOICE_RE = re.compile(r'^lnbc(?:[0-9]+[munp]?)?1[023456789acdefghjklmnpqrstuvwxyz]+$', re.I)
 HASH_RE = re.compile(r'^[0-9a-f]{64}$', re.I)
 
 

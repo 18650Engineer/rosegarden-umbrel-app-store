@@ -74,3 +74,27 @@ No Python dependencies beyond the standard library are required. The GHCR image 
 - [Umbrel Community App Store template](https://github.com/getumbrel/umbrel-community-app-store)
 - [Umbrel: adding a community app store](https://umbrel.com/support/apps/how-to-add-a-community-app-store)
 - [Paulscode Lightning Fork](https://github.com/paulscode/lightning-fork)
+
+
+## v0.1.1-alpha status display fix
+
+The participant-only Bridge `Info` endpoint returns `directions` as objects
+(`name`, `open`, `refusal`), not as a list of direction strings. v0.1.1
+normalizes both response styles, filters unavailable directions, and labels
+restricted operator-only metrics honestly. No wallet permissions change.
+
+After updating files in this Git repository, push to `main` and verify the
+`Build and publish Rose Garden Bridge` GitHub Action succeeds. The Umbrel
+app manifest and Docker image tag both move to `0.1.1`. Install the app
+update from Umbrel's App Store; do not uninstall the app or remove its
+persistent `data/bridge` credential directory.
+
+
+## v0.1.2-alpha — BOLT11 invoice input fix
+
+The previous validator incorrectly rejected the mandatory BOLT11 `1` separator.
+The fixed validator accepts correctly shaped uppercase and lowercase `lnbc`
+invoices and delegates cryptographic validation to Lightning Fork.
+Automatic payments remain disabled. After publishing the update, upgrade the
+installed application from Umbrel without uninstalling it; this preserves
+`data/bridge` credentials.

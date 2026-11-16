@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('rose_server', ROOT/'server.py')
 app = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app)
-INVOICE = 'lnbc' + 'a'*110
+INVOICE = 'lnbc3m1' + 'q'*110
 
 class Tests(unittest.TestCase):
     def sample(self, direction='toBLAKE2b'):
@@ -19,6 +19,20 @@ class Tests(unittest.TestCase):
     def test_reject_invalid_invoice(self):
         for value in ('', 'hello', 'lnbcq'*5000, 'lnbc\n'+'a'*100):
             with self.assertRaises(app.AppError): app.validate_invoice(value)
+
+    def test_bolt11_separator_and_uppercase(self):
+        # The production bug rejected every real invoice with its required '1'.
+        self.assertEqual(app.validate_invoice(INVOICE.upper()), INVOICE)
+        self.assertEqual(app.validate_invoice('  ' + INVOICE + '  '), INVOICE)
+
+    def test_bolt11_missing_separator(self):
+        with self.assertRaises(app.AppError):
+            app.validate_invoice('lnbc3m' + 'q'*110)
+
+    def test_hold_invoice_with_separator(self):
+        with patch.object(app,'get_bridge',return_value=self.sample()):
+            q = app.prepare_quote(INVOICE.upper(), 'toBLAKE2b')
+        self.assertEqual(q['hold_invoice'], INVOICE)
 
     def test_quote(self):
         with patch.object(app,'get_bridge',return_value=self.sample()):
